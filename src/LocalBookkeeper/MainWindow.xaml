@@ -1,0 +1,151 @@
+<Window x:Class="LocalBookkeeper.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="本地记账本" Width="1120" Height="720"
+        MinWidth="900" MinHeight="600"
+        Background="{DynamicResource PageBrush}"
+        WindowStartupLocation="CenterScreen">
+    <Window.Resources>
+        <Style TargetType="Button">
+            <Setter Property="Padding" Value="16,9"/>
+            <Setter Property="Margin" Value="4"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="BorderThickness" Value="0"/>
+        </Style>
+        <Style TargetType="TextBox">
+            <Setter Property="Padding" Value="10,8"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="Margin" Value="4"/>
+        </Style>
+        <Style TargetType="ComboBox">
+            <Setter Property="Padding" Value="8"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="Margin" Value="4"/>
+        </Style>
+    </Window.Resources>
+
+    <Grid Margin="28">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <DockPanel Grid.Row="0" Margin="0,0,0,22">
+            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                <Button Content="备份" Click="Backup_Click"/>
+                <Button Content="恢复" Click="Restore_Click"/>
+            </StackPanel>
+            <StackPanel>
+                <TextBlock Text="💰 我的账本" FontSize="30" FontWeight="Bold"
+                           Foreground="{DynamicResource TextBrush}"/>
+                <TextBlock Text="简单记录每一笔收入和支出" Margin="2,5,0,0"
+                           Foreground="{DynamicResource MutedBrush}"/>
+            </StackPanel>
+        </DockPanel>
+
+        <Grid Grid.Row="1" Margin="0,0,0,20">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition/>
+                <ColumnDefinition/>
+                <ColumnDefinition/>
+            </Grid.ColumnDefinitions>
+
+            <Border Grid.Column="0" Background="White" CornerRadius="14" Padding="20" Margin="0,0,10,0">
+                <StackPanel>
+                    <TextBlock Text="本月结余" Foreground="{DynamicResource MutedBrush}"/>
+                    <TextBlock x:Name="BalanceText" Text="¥ 0.00" FontSize="28" FontWeight="Bold" Margin="0,8,0,0"/>
+                </StackPanel>
+            </Border>
+            <Border Grid.Column="1" Background="White" CornerRadius="14" Padding="20" Margin="5,0">
+                <StackPanel>
+                    <TextBlock Text="本月收入" Foreground="{DynamicResource MutedBrush}"/>
+                    <TextBlock x:Name="IncomeText" Text="¥ 0.00" FontSize="24" FontWeight="SemiBold" Margin="0,8,0,0"/>
+                </StackPanel>
+            </Border>
+            <Border Grid.Column="2" Background="White" CornerRadius="14" Padding="20" Margin="10,0,0,0">
+                <StackPanel>
+                    <TextBlock Text="本月支出" Foreground="{DynamicResource MutedBrush}"/>
+                    <TextBlock x:Name="ExpenseText" Text="¥ 0.00" FontSize="24" FontWeight="SemiBold" Margin="0,8,0,0"/>
+                </StackPanel>
+            </Border>
+        </Grid>
+
+        <Grid Grid.Row="2">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="350"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <Border Grid.Column="0" Background="White" CornerRadius="14" Padding="18" Margin="0,0,12,0">
+                <StackPanel>
+                    <TextBlock Text="记一笔" FontSize="21" FontWeight="Bold" Margin="4,0,0,12"/>
+
+                    <TextBlock Text="类型" Margin="4,4,0,0"/>
+                    <ComboBox x:Name="TypeBox" SelectedIndex="0">
+                        <ComboBoxItem Content="支出"/>
+                        <ComboBoxItem Content="收入"/>
+                    </ComboBox>
+
+                    <TextBlock Text="金额" Margin="4,8,0,0"/>
+                    <TextBox x:Name="AmountBox" PreviewTextInput="AmountBox_PreviewTextInput"/>
+
+                    <TextBlock Text="分类" Margin="4,8,0,0"/>
+                    <ComboBox x:Name="CategoryBox">
+                        <ComboBoxItem Content="餐饮"/>
+                        <ComboBoxItem Content="购物"/>
+                        <ComboBoxItem Content="交通"/>
+                        <ComboBoxItem Content="住房"/>
+                        <ComboBoxItem Content="娱乐"/>
+                        <ComboBoxItem Content="工资"/>
+                        <ComboBoxItem Content="其他"/>
+                    </ComboBox>
+
+                    <TextBlock Text="日期" Margin="4,8,0,0"/>
+                    <DatePicker x:Name="DateBox" Margin="4"/>
+
+                    <TextBlock Text="备注" Margin="4,8,0,0"/>
+                    <TextBox x:Name="NoteBox" Height="70" AcceptsReturn="True" TextWrapping="Wrap"/>
+
+                    <Button Content="＋ 保存这笔账" Background="{DynamicResource AccentBrush}"
+                            Foreground="White" FontWeight="Bold" Margin="4,16,4,0"
+                            Click="Save_Click"/>
+                </StackPanel>
+            </Border>
+
+            <Border Grid.Column="1" Background="White" CornerRadius="14" Padding="18">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <DockPanel Grid.Row="0" Margin="4,0,4,12">
+                        <TextBlock Text="最近账单" FontSize="21" FontWeight="Bold"/>
+                        <TextBox x:Name="SearchBox" Width="220" HorizontalAlignment="Right"
+                                 TextChanged="SearchBox_TextChanged"/>
+                    </DockPanel>
+
+                    <DataGrid x:Name="EntriesGrid" Grid.Row="1" AutoGenerateColumns="False"
+                              CanUserAddRows="False" IsReadOnly="True"
+                              HeadersVisibility="Column" BorderThickness="0"
+                              SelectionChanged="EntriesGrid_SelectionChanged">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="日期" Binding="{Binding Date, StringFormat=yyyy-MM-dd}" Width="105"/>
+                            <DataGridTextColumn Header="类型" Binding="{Binding Type}" Width="70"/>
+                            <DataGridTextColumn Header="分类" Binding="{Binding Category}" Width="85"/>
+                            <DataGridTextColumn Header="金额" Binding="{Binding Amount, StringFormat=N2}" Width="100"/>
+                            <DataGridTextColumn Header="备注" Binding="{Binding Note}" Width="*"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </Grid>
+            </Border>
+        </Grid>
+
+        <DockPanel Grid.Row="3" Margin="4,14,4,0">
+            <TextBlock x:Name="StatusText" Text="数据已保存" Foreground="{DynamicResource MutedBrush}"/>
+            <Button DockPanel.Dock="Right" Content="删除选中账单" Click="Delete_Click"/>
+        </DockPanel>
+    </Grid>
+</Window>
