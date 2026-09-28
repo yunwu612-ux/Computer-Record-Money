@@ -1,36 +1,10 @@
-# 本地记账本 PC V1.0
+# LocalBookkeeper PC V1.1
+简洁、本地优先的 Windows 记账应用。
 
-一个简洁、本地优先的 Windows 记账应用。
-
-## 核心特点
-- 数据保存在用户数据目录，不放在程序安装目录
-- 更新 EXE 不会覆盖账本数据
-- 自动保存
-- JSON 数据格式，便于长期保存和迁移
-- 支持手动备份与恢复
-- 收入 / 支出、分类、日期、备注
-- 月度统计与账单搜索
-- GitHub Actions 自动构建 Windows EXE
-
-## 数据位置
-默认：
-`%APPDATA%\LocalBookkeeper\data\ledger.json`
-
-备份目录：
-`%APPDATA%\LocalBookkeeper\backups\`
-
-因此即使替换新的 EXE，旧账本仍然保留。
-
-## 本地开发
-```powershell
-dotnet restore
-dotnet build
-dotnet run --project src/LocalBookkeeper
-```
-
-## 发布
-```powershell
-dotnet publish src/LocalBookkeeper -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -o publish
-```
-
-发布后的程序不需要用户安装 .NET Runtime。
+V1.1：
+- 账户管理，可设置现有余额
+- 修复金额输入/保存
+- 支出、收入、我欠的/应付款、别人欠我/待收款
+- 本地 JSON 保存
+- 自动备份与手动备份/恢复
+- V1.0 数据兼容
