@@ -3,7 +3,8 @@ name: Build Windows App
 on:
   workflow_dispatch:
   push:
-    branches: [ "main" ]
+    branches:
+      - main
 
 jobs:
   build:
@@ -19,14 +20,18 @@ jobs:
           dotnet-version: '8.0.x'
 
       - name: Restore
-        run: dotnet restore
+        run: dotnet restore src/LocalBookkeeper/LocalBookkeeper.csproj
 
       - name: Build
-        run: dotnet publish src/LocalBookkeeper/LocalBookkeeper.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -o publish
+        run: dotnet build src/LocalBookkeeper/LocalBookkeeper.csproj -c Release --no-restore
+
+      - name: Publish
+        run: dotnet publish src/LocalBookkeeper/LocalBookkeeper.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -o publish --no-restore
 
       - name: Create ZIP
         shell: pwsh
-        run: Compress-Archive -Path publish\* -DestinationPath LocalBookkeeper-PC-V1.0.zip -Force
+        run: |
+          Compress-Archive -Path publish\* -DestinationPath LocalBookkeeper-PC-V1.0.zip -Force
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
