@@ -1,3 +1,6 @@
+using System;
+using System.IO;
+using System.Linq;
 using System.Text.Json;
 
 namespace LocalBookkeeper;
@@ -31,11 +34,17 @@ public sealed class StorageService
                 return new LedgerData();
 
             var json = File.ReadAllText(dataFile);
-            return JsonSerializer.Deserialize<LedgerData>(json) ?? new LedgerData();
+
+            if (string.IsNullOrWhiteSpace(json))
+                return new LedgerData();
+
+            return JsonSerializer.Deserialize<LedgerData>(json)
+                   ?? new LedgerData();
         }
         catch
         {
-            // Never overwrite damaged data. Start an empty in-memory view only.
+            // 不覆盖原始数据。
+            // 如果数据文件损坏，只建立一个临时空账本视图。
             return new LedgerData();
         }
     }
@@ -43,69 +52,138 @@ public sealed class StorageService
     public void Save(LedgerData data)
     {
         Directory.CreateDirectory(Path.GetDirectoryName(dataFile)!);
+        Directory.CreateDirectory(backupDir);
 
-        var temp = dataFile + ".tmp";
-        var json = JsonSerializer.Serialize(data, new JsonSerializerOptions
-        {
-            WriteIndented = true
-        });
+        var tempFile = dataFile + ".tmp";
 
-        File.WriteAllText(temp, json);
+        var json = JsonSerializer.Serialize(
+            data,
+            new JsonSerializerOptions
+            {
+                WriteIndented = true
+            });
 
-        // Keep a rolling backup before replacing the main file.
+        // 先写临时文件，避免程序突然关闭时把正式账本写坏。
+        File.WriteAllText(tempFile, json);
+
+        // 保存正式文件之前，先留下历史备份。
         if (File.Exists(dataFile))
         {
-            var backup = Path.Combine(
+            var backupFile = Path.Combine(
                 backupDir,
-                $"ledger-{DateTime.Now:yyyyMMdd-HHmmss}.json");
+                $"ledger-{DateTime.Now:yyyyMMdd-HHmmssfff}.json");
 
-            try { File.Copy(dataFile, backup, true); } catch { }
+            try
+            {
+                File.Copy(dataFile, backupFile, true);
+            }
+            catch
+            {
+                // 备份失败不会阻止正常保存。
+            }
         }
 
-        File.Move(temp, dataFile, true);
+        // 原子替换正式数据文件。
+        File.Move(tempFile, dataFile, true);
+
         CleanupBackups();
     }
 
     public void CreateManualBackup()
     {
-        if (!File.Exists(dataFile)) return;
+        if (!File.Exists(dataFile))
+            return;
+
+        Directory.CreateDirectory(backupDir);
 
         var target = Path.Combine(
             backupDir,
-            $"manual-backup-{DateTime.Now:yyyyMMdd-HHmmss}.json");
+            $"manual-backup-{DateTime.Now:yyyyMMdd-HHmmssfff}.json");
 
         File.Copy(dataFile, target, true);
     }
 
     public bool RestoreFromFile(string source)
     {
-        if (!File.Exists(source)) return false;
+        if (!File.Exists(source))
+            return false;
 
-        var json = File.ReadAllText(source);
-        var data = JsonSerializer.Deserialize<LedgerData>(json);
+        try
+        {
+            var json = File.ReadAllText(source);
 
-        if (data is null) return false;
+            if (string.IsNullOrWhiteSpace(json))
+                return false;
 
-        var temp = dataFile + ".restore.tmp";
-        File.WriteAllText(temp, JsonSerializer.Serialize(data,
-            new JsonSerializerOptions { WriteIndented = true }));
-        File.Move(temp, dataFile, true);
+            var restoredData =
+                JsonSerializer.Deserialize<LedgerData>(json);
 
-        return true;
+            if (restoredData is null)
+                return false;
+
+            Directory.CreateDirectory(Path.GetDirectoryName(dataFile)!);
+
+            // 恢复之前先备份当前账本。
+            if (File.Exists(dataFile))
+            {
+                var safetyBackup = Path.Combine(
+                    backupDir,
+                    $"before-restore-{DateTime.Now:yyyyMMdd-HHmmssfff}.json");
+
+                try
+                {
+                    File.Copy(dataFile, safetyBackup, true);
+                }
+                catch
+                {
+                }
+            }
+
+            var tempFile = dataFile + ".restore.tmp";
+
+            var restoredJson = JsonSerializer.Serialize(
+                restoredData,
+                new JsonSerializerOptions
+                {
+                    WriteIndented = true
+                });
+
+            File.WriteAllText(tempFile, restoredJson);
+            File.Move(tempFile, dataFile, true);
+
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
     }
 
     private void CleanupBackups()
     {
         try
         {
+            if (!Directory.Exists(backupDir))
+                return;
+
             var files = new DirectoryInfo(backupDir)
                 .GetFiles("ledger-*.json")
-                .OrderByDescending(x => x.CreationTimeUtc)
+                .OrderByDescending(file => file.CreationTimeUtc)
                 .Skip(30);
 
-            foreach (var f in files)
-                f.Delete();
+            foreach (var file in files)
+            {
+                try
+                {
+                    file.Delete();
+                }
+                catch
+                {
+                }
+            }
         }
-        catch { }
+        catch
+        {
+        }
     }
 }
