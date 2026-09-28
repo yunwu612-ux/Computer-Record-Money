@@ -20,7 +20,7 @@ jobs:
           dotnet-version: '8.0.x'
 
       - name: Restore
-        run: dotnet restore src/LocalBookkeeper/LocalBookkeeper.csproj
+        run: dotnet restore src/LocalBookkeeper/LocalBookkeeper.csproj -r win-x64
 
       - name: Build
         run: dotnet build src/LocalBookkeeper/LocalBookkeeper.csproj -c Release --no-restore
